@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Group Quiz Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Group Quiz Game</h1>
+  <div id="setup">
+    <label>Enter player names (comma separated):</label><br />
+    <input type="text" id="playerNames" />
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <h2 id="questionText"></h2>
+    <div id="choices"></div>
+    <p>Current Player: <span id="currentPlayer"></span></p>
+    <p>Scores:</p>
+    <ul id="scoreBoard"></ul>
+    <button onclick="nextQuestion()">Next Question</button>
+    <button onclick="endGame()">End Game</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
