@@ -1,71 +1,77 @@
-let currentQuestion = 0;
-let playerScores = {}; // Store players' scores
-let totalPlayers = 0;
+let players = [];
+let totalRounds = 0;
+let currentRound = 0;
+let currentPlayer = 0;
+let questions = [];
 
-// Fetch trivia questions from Open Trivia Database API
-function getQuestions() {
-  fetch('https://opentdb.com/api.php?amount=10&type=multiple')
-    .then(response => response.json())
+function startGame() {
+  const numPlayers = parseInt(document.getElementById("numPlayers").value);
+  const roundsPerPlayer = parseInt(document.getElementById("roundsPerPlayer").value);
+  totalRounds = numPlayers * roundsPerPlayer;
+
+  // Init players
+  players = [];
+  for (let i = 0; i < numPlayers; i++) {
+    players.push({ name: `Player ${i + 1}`, score: 0 });
+  }
+
+  // Hide setup, show game
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("game").style.display = "block";
+
+  // Get questions from API
+  fetch(`https://opentdb.com/api.php?amount=${totalRounds}&type=multiple`)
+    .then(res => res.json())
     .then(data => {
-      let questions = data.results;
-      startGame(questions);
+      questions = data.results;
+      showQuestion();
     })
-    .catch(error => console.log("Error fetching questions:", error));
+    .catch(err => alert("Failed to load questions"));
 }
 
-// Start the game and display questions
-function startGame(questions) {
-  const questionContainer = document.getElementById("question-container");
-  const optionsContainer = document.getElementById("options-container");
-
-  function displayQuestion() {
-    if (currentQuestion < questions.length) {
-      const question = questions[currentQuestion];
-      const questionText = question.question;
-      const options = [...question.incorrect_answers, question.correct_answer];
-      const correctAnswer = question.correct_answer;
-
-      // Shuffle the options
-      options.sort(() => Math.random() - 0.5);
-
-      // Clear previous question and options
-      questionContainer.innerHTML = questionText;
-      optionsContainer.innerHTML = '';
-
-      // Create options
-      options.forEach((option, index) => {
-        const optionElement = document.createElement("button");
-        optionElement.classList.add("option");
-        optionElement.textContent = option;
-        optionElement.onclick = () => checkAnswer(option, correctAnswer);
-        optionsContainer.appendChild(optionElement);
-      });
-    }
+function showQuestion() {
+  if (currentRound >= totalRounds) {
+    endGame();
+    return;
   }
 
-  function checkAnswer(selectedAnswer, correctAnswer) {
-    if (selectedAnswer === correctAnswer) {
-      updateScore(true);
-    } else {
-      updateScore(false);
-    }
+  const q = questions[currentRound];
+  const allAnswers = [...q.incorrect_answers, q.correct_answer].sort(() => Math.random() - 0.5);
 
-    // Move to next question
-    currentQuestion++;
-    displayQuestion();
-  }
+  document.getElementById("turnInfo").textContent = `${players[currentPlayer].name}'s Turn (Round ${Math.floor(currentRound / players.length) + 1})`;
+  document.getElementById("question").innerHTML = q.question;
+  
+  const answersDiv = document.getElementById("answers");
+  answersDiv.innerHTML = "";
 
-  function updateScore(isCorrect) {
-    if (isCorrect) {
-      playerScores[totalPlayers] = (playerScores[totalPlayers] || 0) + 1;
-    }
-  }
+  allAnswers.forEach(ans => {
+    const btn = document.createElement("button");
+    btn.textContent = ans;
+    btn.onclick = () => {
+      if (ans === q.correct_answer) {
+        players[currentPlayer].score++;
+        alert("Correct!");
+      } else {
+        alert(`Wrong! Correct answer: ${q.correct_answer}`);
+      }
+      currentRound++;
+      currentPlayer = currentRound % players.length;
+      showQuestion();
+    };
+    answersDiv.appendChild(btn);
+  });
 
-  displayQuestion();
+  updateScoreboard();
 }
 
-// Start the game once the player count is set
-document.getElementById("start-game").onclick = () => {
-  totalPlayers = parseInt(document.getElementById("num-players").value, 10);
-  getQuestions(); // Get questions from the API
-};
+function updateScoreboard() {
+  const scoreboard = players.map(p => `${p.name}: ${p.score}`).join(" | ");
+  document.getElementById("scoreboard").textContent = `Scores: ${scoreboard}`;
+}
+
+function endGame() {
+  let highest = Math.max(...players.map(p => p.score));
+  let winners = players.filter(p => p.score === highest).map(p => p.name);
+  document.getElementById("question").textContent = `Game Over! Winner(s): ${winners.join(", ")}`;
+  document.getElementById("answers").innerHTML = "";
+}
