@@ -1,72 +1,71 @@
-let players = [];
-let scores = [];
-let currentPlayerIndex = 0;
-let currentQuestion = {};
-let questions = [
-  {
-    question: "What is the capital of France?",
-    choices: ["Paris", "Berlin", "Madrid", "Rome"],
-    answer: 0,
-  },
-  {
-    question: "What is 5 + 7?",
-    choices: ["10", "12", "14", "15"],
-    answer: 1,
-  },
-  {
-    question: "Which planet is known as the Red Planet?",
-    choices: ["Earth", "Venus", "Mars", "Jupiter"],
-    answer: 2,
+let currentQuestion = 0;
+let playerScores = {}; // Store players' scores
+let totalPlayers = 0;
+
+// Fetch trivia questions from Open Trivia Database API
+function getQuestions() {
+  fetch('https://opentdb.com/api.php?amount=10&type=multiple')
+    .then(response => response.json())
+    .then(data => {
+      let questions = data.results;
+      startGame(questions);
+    })
+    .catch(error => console.log("Error fetching questions:", error));
+}
+
+// Start the game and display questions
+function startGame(questions) {
+  const questionContainer = document.getElementById("question-container");
+  const optionsContainer = document.getElementById("options-container");
+
+  function displayQuestion() {
+    if (currentQuestion < questions.length) {
+      const question = questions[currentQuestion];
+      const questionText = question.question;
+      const options = [...question.incorrect_answers, question.correct_answer];
+      const correctAnswer = question.correct_answer;
+
+      // Shuffle the options
+      options.sort(() => Math.random() - 0.5);
+
+      // Clear previous question and options
+      questionContainer.innerHTML = questionText;
+      optionsContainer.innerHTML = '';
+
+      // Create options
+      options.forEach((option, index) => {
+        const optionElement = document.createElement("button");
+        optionElement.classList.add("option");
+        optionElement.textContent = option;
+        optionElement.onclick = () => checkAnswer(option, correctAnswer);
+        optionsContainer.appendChild(optionElement);
+      });
+    }
   }
-];
 
-function startGame() {
-  const names = document.getElementById("playerNames").value.split(",");
-  players = names.map(name => name.trim());
-  scores = new Array(players.length).fill(0);
-  document.getElementById("setup").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  nextQuestion();
-}
+  function checkAnswer(selectedAnswer, correctAnswer) {
+    if (selectedAnswer === correctAnswer) {
+      updateScore(true);
+    } else {
+      updateScore(false);
+    }
 
-function displayScores() {
-  const board = document.getElementById("scoreBoard");
-  board.innerHTML = "";
-  players.forEach((name, i) => {
-    const li = document.createElement("li");
-    li.textContent = `${name}: ${scores[i]}`;
-    board.appendChild(li);
-  });
-}
-
-function nextQuestion() {
-  currentQuestion = questions[Math.floor(Math.random() * questions.length)];
-  document.getElementById("questionText").textContent = currentQuestion.question;
-  document.getElementById("currentPlayer").textContent = players[currentPlayerIndex];
-  const choicesDiv = document.getElementById("choices");
-  choicesDiv.innerHTML = "";
-  currentQuestion.choices.forEach((choice, i) => {
-    const btn = document.createElement("button");
-    btn.textContent = choice;
-    btn.onclick = () => checkAnswer(i);
-    choicesDiv.appendChild(btn);
-  });
-  displayScores();
-}
-
-function checkAnswer(choiceIndex) {
-  if (choiceIndex === currentQuestion.answer) {
-    scores[currentPlayerIndex]++;
-    alert("Correct!");
-  } else {
-    alert("Wrong!");
+    // Move to next question
+    currentQuestion++;
+    displayQuestion();
   }
-  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-  nextQuestion();
+
+  function updateScore(isCorrect) {
+    if (isCorrect) {
+      playerScores[totalPlayers] = (playerScores[totalPlayers] || 0) + 1;
+    }
+  }
+
+  displayQuestion();
 }
 
-function endGame() {
-  alert("Game Over! Final Scores:\n" +
-    players.map((name, i) => `${name}: ${scores[i]}`).join("\n"));
-  location.reload();
-}
+// Start the game once the player count is set
+document.getElementById("start-game").onclick = () => {
+  totalPlayers = parseInt(document.getElementById("num-players").value, 10);
+  getQuestions(); // Get questions from the API
+};
