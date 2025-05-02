@@ -1,29 +1,27 @@
-<input type="number" id="num-players" ...>
-<button id="start-game">...</button>
-<div id="question-container"></div>
-<div id="options-container"></div>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trivia Game</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Group Trivia Game</title>
 </head>
 <body>
-  <div class="game-container">
-    <h1>Trivia Quiz Game</h1>
+  <h1>Trivia Game</h1>
 
-    <!-- Players Input -->
-    <div id="player-settings">
-      <label for="num-players">Enter Number of Players:</label>
-      <input type="number" id="num-players" min="1" max="10" value="1">
-      <button id="start-game">Start Game</button>
-    </div>
+  <div id="setup">
+    <label>Number of Players:</label>
+    <input type="number" id="numPlayers" min="1" value="2"><br><br>
 
-    <!-- Question and Options -->
-    <div id="question-container"></div>
-    <div id="options-container"></div>
+    <label>Rounds per Player:</label>
+    <input type="number" id="roundsPerPlayer" min="1" value="2"><br><br>
+
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <h2 id="turnInfo"></h2>
+    <div id="question"></div>
+    <div id="answers"></div>
+    <p id="scoreboard"></p>
   </div>
 
   <script src="script.js"></script>
