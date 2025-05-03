@@ -4,19 +4,17 @@ let currentPlayerIndex = 0;
 let currentRound = 1;
 let totalRounds = 0;
 let questions = [];
+let correctAnswer = "";
 
 function startGame() {
   const namesInput = document.getElementById("playerNames").value.trim();
-  const roundsInput = parseInt(document.getElementById("rounds").value);
-
-  if (!namesInput || isNaN(roundsInput) || roundsInput < 1) {
-    alert("Please enter player names and a valid number of rounds.");
-    return;
-  }
-
-  players = namesInput.split("\n").map(name => name.trim()).filter(Boolean);
-  scores = Array(players.length).fill(0);
-  totalRounds = roundsInput;
+  if (!namesInput) return alert("Please enter player names.");
+  
+  players = namesInput.split(",").map(name => name.trim());
+  scores = new Array(players.length).fill(0);
+  totalRounds = parseInt(document.getElementById("rounds").value);
+  
+  if (!totalRounds || totalRounds < 1) return alert("Enter valid number of rounds.");
 
   document.getElementById("setup").style.display = "none";
   document.getElementById("game").style.display = "block";
@@ -25,100 +23,83 @@ function startGame() {
 }
 
 function fetchQuestions() {
-  const amount = totalRounds * players.length;
-  fetch(`https://corsproxy.io/?https://opentdb.com/api.php?amount=${amount}&type=multiple`)
-    .then(response => response.json())
+  const totalQuestions = players.length * totalRounds;
+  fetch(`https://opentdb.com/api.php?amount=${totalQuestions}&type=multiple`)
+    .then(res => res.json())
     .then(data => {
       questions = data.results;
       askQuestion();
-    })
-    .catch(error => {
-      console.error("Failed to fetch questions:", error);
-      alert("Error fetching questions. Try again.");
     });
 }
 
 function askQuestion() {
-  if ((currentRound - 1) * players.length + currentPlayerIndex >= questions.length) {
-    endGame();
-    return;
-  }
+  const questionObj = questions[(currentRound - 1) * players.length + currentPlayerIndex];
+  correctAnswer = questionObj.correct_answer;
 
-  const q = questions[(currentRound - 1) * players.length + currentPlayerIndex];
-  const correctAnswer = q.correct_answer;
-  const allAnswers = [...q.incorrect_answers, correctAnswer];
-  shuffle(allAnswers);
+  document.getElementById("question").innerHTML = decodeHTML(questionObj.question);
+  document.getElementById("roundCounter").innerText = `Round ${currentRound} of ${totalRounds}`;
+  document.getElementById("currentPlayer").innerText = `Player: ${players[currentPlayerIndex]}`;
+  document.getElementById("status").innerText = "";
 
-  document.getElementById("question").innerHTML = `${players[currentPlayerIndex]}'s Turn:<br>${decodeHTML(q.question)}`;
+  const choices = [...questionObj.incorrect_answers, correctAnswer]
+    .map(decodeHTML)
+    .sort(() => Math.random() - 0.5);
 
   const choicesDiv = document.getElementById("choices");
   choicesDiv.innerHTML = "";
-  allAnswers.forEach(answer => {
+
+  choices.forEach(answer => {
     const btn = document.createElement("button");
-    btn.textContent = decodeHTML(answer);
-    btn.onclick = () => handleAnswer(decodeHTML(answer) === decodeHTML(correctAnswer));
+    btn.innerText = answer;
+    btn.onclick = () => handleAnswer(answer === decodeHTML(correctAnswer));
     choicesDiv.appendChild(btn);
   });
-
-  updateScoreboard();
 }
 
 function handleAnswer(isCorrect) {
+  const status = document.getElementById("status");
+
   if (isCorrect) {
     scores[currentPlayerIndex]++;
-    document.getElementById("status").innerText = "Correct!";
+    status.innerText = "Correct!";
+    status.style.color = "green";
   } else {
-    document.getElementById("status").innerText = "Wrong!";
+    status.innerText = "Wrong!";
+    status.style.color = "red";
   }
 
-  currentPlayerIndex++;
+  setTimeout(() => {
+    status.innerText = "";
+    status.style.color = "";
+    nextTurn();
+  }, 1000);
+}
 
+function nextTurn() {
+  currentPlayerIndex++;
   if (currentPlayerIndex >= players.length) {
     currentPlayerIndex = 0;
     currentRound++;
   }
 
-  setTimeout(() => {
-    document.getElementById("status").innerText = "";
-    if ((currentRound - 1) * players.length + currentPlayerIndex < questions.length) {
-      askQuestion();
-    } else {
-      endGame();
-    }
-  }, 1000);
+  const totalTurns = players.length * totalRounds;
+  const currentTurn = (currentRound - 1) * players.length + currentPlayerIndex;
+
+  if (currentTurn < totalTurns) {
+    askQuestion();
+  } else {
+    endGame();
+  }
 }
 
 function endGame() {
   document.getElementById("game").style.display = "none";
-  document.getElementById("final").style.display = "block";
+  document.getElementById("result").style.display = "block";
 
-  const results = players.map((name, index) => ({ name, score: scores[index] }));
-  results.sort((a, b) => b.score - a.score);
-
-  let html = "<h3>Final Scores:</h3><ul>";
-  results.forEach(p => {
-    html += `<li>${p.name}: ${p.score}</li>`;
-  });
-  html += "</ul>";
-
-  html += `<h3>🎉 Winner: ${results[0].name} 🎉</h3>`;
-
-  document.getElementById("finalScoreboard").innerHTML = html;
-}
-
-function updateScoreboard() {
-  let text = "Scores: ";
-  players.forEach((name, index) => {
-    text += `${name} (${scores[index]}) `;
-  });
-  document.getElementById("scoreboard").innerText = text;
-}
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+  const scoreboard = document.getElementById("scoreboard");
+  scoreboard.innerHTML = players
+    .map((player, i) => `<li><strong>${player}</strong>: ${scores[i]} points</li>`)
+    .join("");
 }
 
 function decodeHTML(html) {
