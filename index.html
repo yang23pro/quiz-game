@@ -3,33 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Group Quiz Game</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Quiz Game</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <div class="container">
     <h1>Group Quiz Game</h1>
-
+    
     <div id="setup">
-      <label>Enter player names (one per line):</label><br>
-      <textarea id="playerNames" rows="5" cols="30"></textarea><br><br>
+      <h3>Enter player names (comma-separated):</h3>
+      <textarea id="playerNames" rows="2"></textarea>
+      
+      <h3>Number of rounds:</h3>
+      <input type="number" id="rounds" min="1" max="100" value="5"/>
 
-      <label>Number of Rounds:</label>
-      <input type="number" id="rounds" min="1" /><br><br>
-
+      <br/>
       <button onclick="startGame()">Start Game</button>
     </div>
 
     <div id="game" style="display:none;">
+      <h3 id="roundCounter"></h3>
       <h2 id="question"></h2>
       <div id="choices"></div>
       <p id="status"></p>
-      <p id="scoreboard"></p>
+      <p id="currentPlayer"></p>
     </div>
 
-    <div id="final" style="display:none;">
+    <div id="result" style="display:none;">
       <h2>Game Over!</h2>
-      <div id="finalScoreboard"></div>
+      <ul id="scoreboard"></ul>
+      <button onclick="location.reload()">Play Again</button>
     </div>
   </div>
 
