@@ -56,7 +56,7 @@ function askQuestion() {
   allAnswers.forEach(answer => {
     const btn = document.createElement("button");
     btn.textContent = decodeHTML(answer);
-    btn.onclick = () => handleAnswer(answer === correctAnswer);
+    btn.onclick = () => handleAnswer(decodeHTML(answer) === decodeHTML(correctAnswer));
     choicesDiv.appendChild(btn);
   });
 
